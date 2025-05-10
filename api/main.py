@@ -11,18 +11,14 @@ import uvicorn
 load_dotenv()
 
 
-class Settings(BaseSettings):
-    server_script_path: str = "/Users/aayushkaayushumar/Desktop/MCP_Binance_python/main.py"
-
-
-settings = Settings()
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    client = MCPClient()
+
     try:
-        connected = await client.connect_to_server(settings.server_script_path)
+        client = MCPClient()
+        connected = await client.connect_to_server(
+            "https://mcp-binance-python.onrender.com/sse"
+        )
         if not connected:
             raise HTTPException(
                 status_code=500, detail="Failed to connect to MCP server"
@@ -63,6 +59,7 @@ class ToolCall(BaseModel):
     name: str
     args: Dict[str, Any]
 
+
 @app.post("/query", response_model=Dict[str, Any])
 async def process_query(request: QueryRequest):
     """Process a query and return the response"""
@@ -71,7 +68,6 @@ async def process_query(request: QueryRequest):
         return {"messages": messages}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 @app.get("/tools")

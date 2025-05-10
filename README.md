@@ -38,11 +38,12 @@ Create a `.env` file in the root directory and add your API keys. In this exampl
 
 5. **Run the Application**:
   ```bash
-  uvicorn main:app --reload
+  cd api && uvicorn main:app --reload
   ```
 
 1. **Access the API**:
   Open your browser and navigate to `http://127.0.0.1:8000/docs` to explore the API documentation.
+
 
 ## Tutorial Overview
 

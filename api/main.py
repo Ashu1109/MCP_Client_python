@@ -11,14 +11,18 @@ import uvicorn
 load_dotenv()
 
 
+class Settings(BaseSettings):
+    server_script_path: str = "./mcp_server.py"
+
+
+settings = Settings()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
+    client = MCPClient()
     try:
-        client = MCPClient()
-        connected = await client.connect_to_server(
-            "https://mcp-binance-python.onrender.com/sse"
-        )
+        connected = await client.connect_to_server(settings.server_script_path)
         if not connected:
             raise HTTPException(
                 status_code=500, detail="Failed to connect to MCP server"

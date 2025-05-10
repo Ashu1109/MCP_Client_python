@@ -9,7 +9,7 @@ from datetime import datetime
 from utils.logger import logger
 import json
 import os
-from mcp.client.sse import sse_client
+
 from anthropic import Anthropic
 from anthropic.types import Message
 
@@ -25,21 +25,30 @@ class MCPClient:
         self.logger = logger
 
     # connect to the MCP server
-    async def connect_to_server(self, server_url: str):
+    async def connect_to_server(self, server_script_path: str):
         try:
-            # Remove local server execution logic
-            # New SSE transport initialization
-            read, write = await self.exit_stack.enter_async_context(
-                sse_client(server_url)  # Use SSE client with provided URL
+            is_python = server_script_path.endswith(".py")
+            is_js = server_script_path.endswith(".js")
+            if not (is_python or is_js):
+                raise ValueError("Server script must be a .py or .js file")
+
+            command = "python3" if is_python else "node"
+            server_params = StdioServerParameters(
+                command=command, args=[server_script_path], env=None
             )
+
+            stdio_transport = await self.exit_stack.enter_async_context(
+                stdio_client(server_params)
+            )
+            self.stdio, self.write = stdio_transport
             self.session = await self.exit_stack.enter_async_context(
-                ClientSession(read, write)  # Adjusted transport interface
+                ClientSession(self.stdio, self.write)
             )
 
             await self.session.initialize()
-            self.logger.info(f"Connected to MCP server at {server_url}")
 
-            # Existing tool discovery remains unchanged
+            self.logger.info("Connected to MCP server")
+
             mcp_tools = await self.get_mcp_tools()
             self.tools = [
                 {
@@ -50,9 +59,14 @@ class MCPClient:
                 for tool in mcp_tools
             ]
 
+            self.logger.info(
+                f"Available tools: {[tool['name'] for tool in self.tools]}"
+            )
+
             return True
+
         except Exception as e:
-            self.logger.error(f"Connection error: {e}")
+            self.logger.error(f"Error connecting to MCP server: {e}")
             traceback.print_exc()
             raise
 

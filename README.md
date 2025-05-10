@@ -33,7 +33,6 @@ Create a `.env` file in the root directory and add your API keys. In this exampl
 
   ```env
   ANTHROPIC_API_KEY=
-  SERPER_API_KEY=
   ```
 
 5. **Run the Application**:
